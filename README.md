@@ -1,7 +1,3 @@
-Absolutely! Here's a structured **README.md** section with a **Table of Contents** and well-organized **snippet code + explanations** to guide users through the **visualization part** of your Hand Sign Recognition project.
-
----
-
 ## 📊 Visualization and Evaluation
 
 ### 📚 Table of Contents
@@ -112,7 +108,3 @@ cv2.destroyAllWindows()
 
 #### ✅ Why This Matters
 Confirms whether hand landmarks are accurately detected before prediction.
-
----
-
-Let me know if you want this styled with emojis, collapsible sections, or in a markdown card layout for GitHub!
