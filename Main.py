@@ -1,104 +1,115 @@
-import streamlit as st
+from flask import Flask, render_template, Response, jsonify
 import cv2
 import numpy as np
-import pickle
-import mediapipe as mp
-from PIL import Image
+import tensorflow as tf
+import os
+import json
 
-# -------------------- Sidebar Content -------------------------
-st.sidebar.title("✋ Hand Sign Detection")
-st.sidebar.markdown("### 📌 Instructions")
-st.sidebar.markdown("""
-1. Turn **Camera ON** using the toggle.
-2. Show a hand gesture clearly in front of webcam.
-3. Detected sign will be shown below the video.
-""")
+app = Flask(__name__)
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("👨‍🎓 **Student Name**: Your Name")
-st.sidebar.markdown("👨‍🏫 **Guide Name**: Guide Name")
+# Load your pre-trained model
+model = None
 
-# -------------------- Load the Model -------------------------
-with open('./model.p', 'rb') as f:
-    model_dict = pickle.load(f)
+def load_model():
+    global model
+    try:
+        model = tf.keras.models.load_model('hand_gesture_data.h5')
+        print("Model loaded successfully!")
+        return True
+    except Exception as e:
+        print(f"Failed to load model: {str(e)}")
+        return False
 
-model = model_dict['model']
-label_map = model_dict.get('label_map')
+# Labels for prediction
+labels = ['Hi', 'My', 'Name', 'Is', 'and', 'Friend', 'Thank You', 'I am', 
+         'listening', 'do you', 'talk', 'want to', 'a', 'e', 'm', 'n','o', 's', 'r']
 
-# Reverse label map
-if label_map:
-    labels_dict = {v: k for k, v in label_map.items()}
-else:
-    labels_dict = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, 'a': 5, 'e': 6, 'h': 7, 'i': 8, 'l': 9, 'm': 10, 'o': 11, 'r': 12, 's': 13}
+camera = None
+prediction_text = ""
 
-# -------------------- MediaPipe Setup -------------------------
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
+def process_frame(frame):
+    global prediction_text
+    
+    # Preprocess the frame for model input
+    # Note: You might need to adjust this preprocessing based on how your model was trained
+    resized = cv2.resize(frame, (224, 224))  # Adjust size based on your model's expected input
+    normalized = resized / 255.0  # Normalize pixel values
+    
+    # Make prediction
+    try:
+        if model is not None:
+            input_data = np.expand_dims(normalized, axis=0)
+            predictions = model.predict(input_data)
+            predicted_class_index = np.argmax(predictions[0])
+            
+            if 0 <= predicted_class_index < len(labels):
+                prediction_text = labels[predicted_class_index]
+            else:
+                prediction_text = "Unknown"
+    except Exception as e:
+        prediction_text = f"Error: {str(e)}"
+    
+    # Draw a box for the hand gesture area
+    cv2.rectangle(frame, (50, 50), (300, 300), (0, 255, 0), 2)
+    cv2.putText(frame, "Place hand here", (50, 40), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+    
+    # Display the predicted text on the frame
+    cv2.putText(frame, f"Prediction: {prediction_text}", (50, 350), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                
+    return frame
 
-hands = mp_hands.Hands(static_image_mode=False, min_detection_confidence=0.5)
-
-# -------------------- Helper: Extract Features -------------------------
-def extract_landmark_features(landmarks):
-    x_vals = [lm.x for lm in landmarks]
-    y_vals = [lm.y for lm in landmarks]
-    min_x, min_y = min(x_vals), min(y_vals)
-
-    features = []
-    for lm in landmarks:
-        features.append(lm.x - min_x)
-        features.append(lm.y - min_y)
-
-    return features, x_vals, y_vals
-
-# -------------------- Streamlit App Layout -------------------------
-st.title("🧠 Real-time Hand Sign Recognition")
-run = st.toggle("🎥 Turn Camera ON")
-
-FRAME_WINDOW = st.image([])  # For showing video stream
-output_text = st.empty()     # For displaying predicted sign
-
-# -------------------- Webcam Prediction Loop -------------------------
-if run:
-    cap = cv2.VideoCapture(0)
-
-    while run:
-        ret, frame = cap.read()
-        if not ret:
-            st.warning("Webcam not found.")
+def generate_frames():
+    global camera
+    
+    if camera is None:
+        camera = cv2.VideoCapture(0)  # Open the camera
+        
+    while True:
+        success, frame = camera.read()
+        if not success:
             break
+        else:
+            # Process frame to detect hand signs
+            processed_frame = process_frame(frame)
+            
+            # Convert to JPEG format
+            ret, buffer = cv2.imencode('.jpg', processed_frame)
+            frame_bytes = buffer.tobytes()
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-        frame = cv2.flip(frame, 1)
-        H, W, _ = frame.shape
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(frame_rgb)
+@app.route('/')
+def index():
+    return render_template('Index.html')
 
-        predicted_char = ""
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(
-                    frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
-                    mp_drawing_styles.get_default_hand_landmarks_style(),
-                    mp_drawing_styles.get_default_hand_connections_style()
-                )
+@app.route('/start_camera')
+def start_camera():
+    global camera
+    if camera is None:
+        camera = cv2.VideoCapture(0)
+    return jsonify({"status": "Camera started"})
 
-                features, x_vals, y_vals = extract_landmark_features(hand_landmarks.landmark)
+@app.route('/stop_camera')
+def stop_camera():
+    global camera
+    if camera is not None:
+        camera.release()
+        camera = None
+    return jsonify({"status": "Camera stopped"})
 
-                if len(features) == model.n_features_in_:
-                    prediction = model.predict([np.asarray(features)])
-                    predicted_char = labels_dict[int(prediction[0])]
+@app.route('/get_prediction')
+def get_prediction():
+    global prediction_text
+    return jsonify({"text": prediction_text})
 
-                    x1, y1 = int(min(x_vals) * W) - 20, int(min(y_vals) * H) - 20
-                    x2, y2 = int(max(x_vals) * W) + 20, int(max(y_vals) * H) + 20
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 2)
-                    cv2.putText(frame, predicted_char, (x1, y1 - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2, cv2.LINE_AA)
-
-        FRAME_WINDOW.image(frame, channels="BGR")
-        output_text.markdown(f"### 🔤 Detected Sign: `{predicted_char}`")
-
-    cap.release()
-else:
-    st.warning("👆 Turn ON the camera to start recognition.")
+if __name__ == '__main__':
+    load_model()
+    app.run(debug=True)

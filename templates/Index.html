@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gesture Recognition</title>
+    <link rel="stylesheet" href="static/Index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fas fa-hand-paper"></i>
+                    <h1>Hand Gesture Recognition</h1>
+                </div>
+                <a href="/about" class="btn about-btn">
+                    <i class="fas fa-info-circle"></i> About Project
+                </a>
+            </div>
+            <p>Show your hand in the webcam window and make one of the gestures: Hi, No, Ok, Talk, You</p>
+        </header>
+        
+        <main>
+            <div class="app-container">
+                <div class="webcam-container">
+                    <div class="video-wrapper">
+                        <img id="video_feed" src="/video_feed" alt="Video Feed">
+                        <div class="roi-overlay"></div>
+                        <div id="loading-indicator">
+                            <div class="spinner"></div>
+                            <p>Loading camera...</p>
+                        </div>
+                    </div>
+                    <div id="prediction-box">
+                        <div id="prediction-label">No gesture detected</div>
+                        <div id="confidence-meter">
+                            <div class="meter-label">Confidence:</div>
+                            <div class="meter-bar">
+                                <div class="meter-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="meter-value">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn primary-btn">
+                        <i class="fas fa-play"></i> Start Camera
+                    </button>
+                    <button id="stopBtn" class="btn danger-btn" disabled>
+                        <i class="fas fa-stop"></i> Stop Camera
+                    </button>
+                </div>
+                
+                <div class="recognition-results">
+                    <h2><i class="fas fa-comment-alt"></i> Recognized Text</h2>
+                    <div class="result-container">
+                        <textarea id="resultText" placeholder="Recognized gestures will appear here..." readonly></textarea>
+                        <div class="actions">
+                            <button id="clearBtn" class="btn secondary-btn">
+                                <i class="fas fa-trash-alt"></i> Clear
+                            </button>
+                            <button id="copyBtn" class="btn secondary-btn">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button id="speakBtn" class="btn secondary-btn">
+                                <i class="fas fa-volume-up"></i> Speak
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gesture-guide">
+                <h2><i class="fas fa-book"></i> Gesture Guide</h2>
+                <div class="gesture-list">
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👋</div>
+                        <div class="gesture-info">
+                            <div class="gesture-name">Hi</div>
+                            <div class="gesture-desc">Wave with palm facing forward</div>
+                        </div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">✋</div>
+                        <div class="gesture-info">
+                            <div class="gesture-name">No</div>
+                            <div class="gesture-desc">Hand up, palm facing forward</div>
+                        </div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👌</div>
+                        <div class="gesture-info">
+                            <div class="gesture-name">Ok</div>
+                            <div class="gesture-desc">Thumb and index finger form a circle</div>
+                        </div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">🤙</div>
+                        <div class="gesture-info">
+                            <div class="gesture-name">Talk</div>
+                            <div class="gesture-desc">Thumb and pinky extended like a phone</div>
+                        </div>
+                    </div>
+                    <div class="gesture-item">
+                        <div class="gesture-icon">👉</div>
+                        <div class="gesture-info">
+                            <div class="gesture-name">You</div>
+                            <div class="gesture-desc">Index finger pointing forward</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="status-indicator">
+                <span id="connection-status" class="status-dot offline"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+            <p>© 2025 Hand Gesture Recognition App</p>
+            <p><i class="fas fa-exclamation-circle"></i> Make sure to allow camera access when prompted</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <i id="notification-icon" class="fas"></i>
+            <p id="notification-message"></p>
+        </div>
+    </div>
+
+    <script src="static/Index.js"></script>
+</body>
+</html>

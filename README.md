@@ -1,110 +1,107 @@
-## 📊 Visualization and Evaluation
+# Hand Gesture Recognition System
 
-### 📚 Table of Contents
+A real-time hand gesture recognition system that uses computer vision and deep learning to interpret hand gestures through a webcam. The system can recognize five different gestures: Hi, No, Ok, Talk, and You.
 
-1. [📁 Dataset Distribution](#-1-dataset-distribution)
-2. [🧮 Confusion Matrix](#-2-confusion-matrix)
-3. [📏 Per-Class Precision](#-3-per-class-precision)
-4. [🖐️ Visualizing Hand Landmarks](#-4-visualizing-hand-landmarks)
+## Features
 
----
+- Real-time hand gesture recognition through webcam
+- Support for 5 different gestures:
+  - 👋 Hi: Wave with palm facing forward
+  - ✋ No: Hand up, palm facing forward
+  - 👌 Ok: Thumb and index finger form a circle
+  - 🤙 Talk: Thumb and pinky extended like a phone
+  - 👉 You: Index finger pointing forward
+- Web-based interface with live video feed
+- Confidence score display for each prediction
+- Text-to-speech capability for recognized gestures
+- Gesture guide with visual examples
+- Responsive design for different screen sizes
 
-### 📌 **1. Dataset Distribution**
+## Technical Stack
 
-Displays how many images are available per hand sign class to check for data imbalance.
+- **Backend:**
+  - Python
+  - Flask (Web Framework)
+  - TensorFlow/Keras (Deep Learning)
+  - OpenCV (Computer Vision)
+  - MediaPipe (Hand Tracking)
 
-#### 🔍 Code Snippet
+- **Frontend:**
+  - HTML5
+  - CSS3
+  - JavaScript
+  - Font Awesome (Icons)
 
-```python
-import os
-import matplotlib.pyplot as plt
+## Installation
 
-class_counts = {
-    label: len(os.listdir(f'dataset/{label}'))
-    for label in os.listdir('dataset') if os.path.isdir(f'dataset/{label}')
-}
-
-plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
-plt.title("Images per Hand Sign")
-plt.xlabel("Sign Label")
-plt.ylabel("Image Count")
-plt.show()
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd Hand_Sign_Model
 ```
 
-#### ✅ Why This Matters
-This helps identify class imbalance, which can hurt model accuracy.
-
----
-
-### 📌 **2. Confusion Matrix**
-
-Visualizes the classification performance for each class, highlighting misclassifications.
-
-#### 🔍 Code Snippet
-
-```python
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-
-cm = confusion_matrix(y_test, y_predict)
-disp = ConfusionMatrixDisplay(cm, display_labels=label_map.keys())
-disp.plot(cmap='Blues', xticks_rotation=45)
-plt.title("Confusion Matrix")
-plt.show()
+2. Create a virtual environment (recommended):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-#### ✅ Why This Matters
-It shows how well the model performs on each class and where it makes mistakes.
-
----
-
-### 📌 **3. Per-Class Precision**
-
-Bar graph of precision scores per label to understand class-wise performance.
-
-#### 🔍 Code Snippet
-
-```python
-from sklearn.metrics import classification_report
-
-report = classification_report(y_test, y_predict, target_names=label_map.keys(), output_dict=True)
-precisions = [report[label]["precision"] for label in label_map.keys()]
-
-plt.bar(label_map.keys(), precisions, color='green')
-plt.title("Precision per Hand Sign")
-plt.ylabel("Precision")
-plt.ylim(0, 1.1)
-plt.show()
+3. Install required packages:
+```bash
+pip install -r requirements.txt
 ```
 
-#### ✅ Why This Matters
-You can detect if certain signs are harder for the model to classify correctly.
+## Usage
 
----
-
-### 📌 **4. Visualizing Hand Landmarks**
-
-Use MediaPipe to draw hand landmarks on a sample image from the dataset.
-
-#### 🔍 Code Snippet
-
-```python
-import cv2
-import mediapipe as mp
-
-image = cv2.imread('dataset/5/0.jpg')  # Example image
-image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-with mp.solutions.hands.Hands(static_image_mode=True) as hands:
-    result = hands.process(image_rgb)
-    if result.multi_hand_landmarks:
-        for landmarks in result.multi_hand_landmarks:
-            mp.solutions.drawing_utils.draw_landmarks(
-                image, landmarks, mp.solutions.hands.HAND_CONNECTIONS)
-
-cv2.imshow("Landmark Visualization", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+1. Start the Flask application:
+```bash
+python saradhe/hand_gesture_realtime.py
 ```
 
-#### ✅ Why This Matters
-Confirms whether hand landmarks are accurately detected before prediction.
+2. Open your web browser and navigate to:
+```
+http://localhost:5000
+```
+
+3. Click the "Start Camera" button to begin gesture recognition
+4. Position your hand within the green box in the video feed
+5. Make one of the supported gestures
+6. The system will display the recognized gesture and confidence score
+
+## Project Structure
+
+```
+Hand_Sign_Model/
+├── saradhe/
+│   ├── hand_gesture_realtime.py  # Main application file
+│   ├── Train.ipynb              # Model training notebook
+│   ├── templates/
+│   │   ├── Index.html          # Main web interface
+│   │   └── about.html          # About page
+│   └── static/
+│       ├── Index.css           # Stylesheet
+│       └── Index.js            # Frontend JavaScript
+└── README.md
+```
+
+## Model Details
+
+- Uses a ResNet50V2-based model for gesture classification
+- Input image size: 224x224 pixels
+- Confidence threshold: 50%
+- Region of Interest (ROI) for hand detection
+- Hand tracking using MediaPipe
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- MediaPipe for hand tracking capabilities
+- TensorFlow/Keras for deep learning framework
+- OpenCV for computer vision processing 
